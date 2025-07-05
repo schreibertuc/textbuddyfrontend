@@ -1,0 +1,41 @@
+<!-- dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TextBuddy Dashboard</title>
+</head>
+<body>
+  <h1>Welcome to your dashboard!</h1>
+  <p id="user-email"></p>
+  <button id="logout-btn">Log out</button>
+
+  <script type="module">
+    import { supabase } from './supabaseClient.js';
+
+    // Get user info
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      window.location.href = '/index.html'; // redirect to login if not authed
+    } else {
+      document.getElementById('user-email').textContent = `Logged in as ${user.email}`;
+
+      // OPTIONAL: Add user to "users" table
+      const { error } = await supabase.from('users').insert([
+        { id: user.id, email: user.email }
+      ]).select();
+
+      if (error && !error.message.includes('duplicate key')) {
+        console.error('❌ Error inserting user into users table:', error.message);
+      }
+    }
+
+    // Log out
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      window.location.href = '/index.html';
+    });
+  </script>
+</body>
+</html>
